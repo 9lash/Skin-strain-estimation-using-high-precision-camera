@@ -1,0 +1,239 @@
+% 
+% fileID = fopen('Sample1.txt')
+% k = 0;
+% while ~feof(fileID)
+%     k = k+1;
+% C = textscan(fileID,formatSpec,N,'CommentStyle','##','Delimiter','\t');
+% figure, scatter(C{2},C{3}), title(['Temperature and Humidity, Block ',num2str(k)]);
+% end
+
+close all;
+clear all; 
+% Gesture 1 : Index finger bent
+T = readtable('Index bent initial.txt', 'ReadVariableNames', false);
+S = readtable('Index bent final.txt', 'ReadVariableNames', false);
+Indexbent = cell(70,4);
+for k=1:56
+    for i = 1: 12
+        for j=1:3
+            ini_marker(i,j) = T{k, 6+(5*(i-1)) + (j-1)};
+        end
+    end
+
+    for i = 1:12
+        for j =1:3
+            final_marker(i,j) = S{k,6+(5*(i-1)) + (j-1)};
+        end
+    end
+
+    for i=1:12
+        strain1(i,:) = final_marker(i,:) - ini_marker(i,:);
+    end
+    
+    Indexbent{k,1} = strain1;
+
+
+    for i=1:12
+        strain1_mag(i) = sqrt((strain1(i,1))^2 + (strain1(i,2))^2 + (strain1(i,3))^2);
+    end
+    
+    Indexbent{k,2} = strain1_mag; 
+    b= strain1_mag';
+    A = [b b b];
+    strain1_dir = strain1./A;
+         
+    Indexbent{k,3} = strain1_dir;
+    
+    strainmag_mean = mean(strain1_mag);
+    Indexbent{k,4} = strainmag_mean;
+    
+   %Index_rawdata = Index bent{}
+end
+
+for i=1:56
+    for j=1:12
+        Rawdata_Index(12*(i-1)+j, :) = Indexbent{i,1}(j,:);
+    end
+end
+
+for i=1:56
+    for j=1:12
+        Rawunits_Index(12*(i-1)+j,:) = Indexbent{i,3}(j,:);
+    end
+end
+
+
+% figure; 
+% hold on;
+% for i=1:12
+%     plot3(Rawdata_Index(i,1), Rawdata_Index(i,2), Rawdata_Index(i,3));
+% end
+
+% Gesture 2: 
+M = readtable('power grasp initial2.txt','ReadVariableNames', false );
+N = readtable('power grasp final2.txt', 'ReadVariableNames', false);
+powergrasp = cell(70,4);
+
+for k=1:51
+    for i = 1: 12
+        for j=1:3
+            ini_markergrasp(i,j) = M{k, 6+(5*(i-1)) + (j-1)};
+        end
+    end
+
+    for i = 1:12
+        for j =1:3
+            final_markergrasp(i,j) = N{k,6+(5*(i-1)) + (j-1)};
+        end
+    end
+
+    for i=1:12 
+        strain2(i,:) = final_markergrasp(i,:) - ini_markergrasp(i,:);
+    end
+    
+    powergrasp{k,1} = strain2;
+
+
+    for i=1:12
+        strain2_mag(i) = sqrt((strain2(i,1))^2 + (strain2(i,2))^2 + (strain2(i,3))^2);
+    end
+    
+    powergrasp{k,2} = strain2_mag; 
+    l= strain2_mag';
+    D = [l l l];
+    strain2_dir = strain2./D;
+         
+    powergrasp{k,3} = strain2_dir;
+    
+    strain2mag_mean = mean(strain2_mag);
+    powergrasp{k,4} = strain2mag_mean;
+end
+
+for i=1:48
+    for j=1:12
+        Rawdata_grasp(12*(i-1)+j, :) = powergrasp{i,1}(j,:);
+    end
+end
+
+for i=1:48
+    for j=1:12
+        Rawunits_grasp(12*(i-1)+j, :) = powergrasp{i,3}(j,:);
+    end
+end
+
+figure;
+title(' Strain Plot of Markers for Index bending gesture and Power grasp gesture');
+plot3(Rawdata_Index(:,1), Rawdata_Index(:,2), Rawdata_Index(:,3), 'bo');
+xlabel('Strain of the markers along x direction');
+ylabel('Strain of the markers along y direction');
+zlabel('Strain of the markers along z direction');
+hold on
+plot3(Rawdata_grasp(:,1), Rawdata_grasp(:,2), Rawdata_grasp(:,3), 'ro');
+grid on;
+
+figure;
+title(' Unit Strain Plot of Markers for Index bending gesture and Power grasp gesture');
+plot3(Rawunits_Index(:,1), Rawunits_Index(:,2), Rawunits_Index(:,3), 'bo');
+xlabel('Unit Strain of the markers along x direction');
+ylabel('Unit Strain of the markers along y direction');
+zlabel('Unit Strain of the markers along z direction');
+hold on
+plot3(Rawunits_grasp(:,1), Rawunits_grasp(:,2), Rawunits_grasp(:,3), 'ro');
+grid on;
+
+
+%% Converting 12by3 matrices into 1by36 vector
+col_val=[];
+for i = 1:56
+    data_seg = Rawdata_Index((i-1)*12+1:12*i,:);
+    row_val=[];
+    for j=1:size(data_seg,1);
+        row_val=[row_val,data_seg(j,:)];
+    end
+    col_val=[col_val;row_val];
+end
+    
+RawIndex_ordered = col_val;
+
+col_val2=[];
+for i = 1:48
+    data_seg = Rawdata_grasp((i-1)*12+1:12*i,:);
+    row_val2=[];
+    for j=1:size(data_seg,1);
+        row_val2=[row_val2,data_seg(j,:)];
+    end
+    col_val2=[col_val2;row_val2];
+end
+
+RawGrasp_ordered = col_val2; 
+
+% Coeff1 = pca(RawIndex_ordered');
+% Coeff2 = pca(RawGrasp_ordered);
+% 
+ [IDX1,C] = kmeans([RawIndex_ordered ; RawGrasp_ordered], 2,'Replicates',7, 'display','iter' );
+%% PCA
+Data = [RawIndex_ordered; RawGrasp_ordered];
+[Coeff, Score] = pca(Data);
+lowdim_Data = Score(:,1:3);
+
+lowdim_Indexbent=[];
+lowdim_Indexbent=lowdim_Data(1:56,:);
+
+lowdim_grasp=[];
+lowdim_grasp=lowdim_Data(57:104,:);
+
+figure;
+title(' Data Plot of Markers for Index bending gesture and Power grasp gesture after PCA');
+plot3(lowdim_Indexbent(:,1), lowdim_Indexbent(:,2), lowdim_Indexbent(:,3), 'bo');
+xlabel('PCA 1st Component');
+ylabel('PCA 2nd Component');
+zlabel('PCA 3rd Component');
+hold on
+plot3(lowdim_grasp(:,1), lowdim_grasp(:,2), lowdim_grasp(:,3), 'ro');
+grid on;
+
+[IDX,C] = kmeans(lowdim_Data, 2,'Replicates',7, 'display','iter');
+
+
+x1 = ones(56,1);
+x2 = 2*ones(48,1);
+y1 = [x1;x2];
+Y1=mat2cell(y1,[ones(1,104)],1);
+% load data
+     load fisheriris;
+% train svm using three features for two species
+%     svmStruct = svmtrain(lowdim_Data(1:104,1:3),y1,'showplot','false','kernel_function','rbf',...
+%       'boxconstraint',1,'kktviolationlevel',0.05,'tolkkt',5e-3); 
+      svmStruct = svmtrain(lowdim_Data(1:104,1:3),y1,'showplot','false','kernel_function','rbf','rbf_sigma',6,...
+      'boxconstraint',1,'kktviolationlevel',0.05,'tolkkt',5e-3); 
+    % run function described above
+     svm_3d_matlab_vis(svmStruct,lowdim_Data(1:104,1:3),Y1)
+
+
+% figure('Name','Training' ,'NumberTitle','on','Position',[300,60,800,600]);
+% SVM1=svmtrain(lowdim_Data,y1,'KERNEL_FUNCTION','rbf','RBF_SIGMA',1,'showplot',true)
+Classify_Training_Data=svmclassify(svmStruct,lowdim_Data);
+error=sum(Classify_Training_Data~=y1)
+errorRate=error/size(y1,1)
+% Classify_Test_Data=svmclassify(SVM1,X2','showplot',true);
+
+        
+
+
+
+% figure;
+% hold on
+% title('Data plot after PCA');
+% xlabel('X axis');
+% ylabel('Y axis');
+% zlabel('Z axis');
+% for i =1:104
+%     if(i<=56)
+%         plot3(VV(i,1), VV(i,2), VV(i,3), 'bo');
+%         hold on
+%     else
+%     plot3(VV(i,1), VV(i,2), VV(i,3), 'ro');
+%     end
+% end
+
+     
