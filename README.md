@@ -5,5 +5,5 @@ This project investigates the relationship between different grasp postures of t
 
 <p>
 
-The matlab program takes in a CSV file which is formed by accounting the position changes (3D cordinates) of each marker. Each video thus produces a 36 dimension data which is converted into a 3 dimensional data using a dimensionality reduction technique called Principal Component Analysis (PCA). Then I train a Support Vector Machine (SVM) to classify these gestures. 
+The matlab program takes in a CSV file which is formed by tracking the position changes (3D cordinates) of each marker. Each video thus produces a 36 dimension data which is converted into a 3 dimensional data using a dimensionality reduction technique called Principal Component Analysis (PCA). Then I train a Support Vector Machine (SVM) to classify these gestures. 
 </p>
